@@ -86,7 +86,7 @@ Vagrant.configure(2) do |config|
       nodeconfig.vm.hostname = node[:hostname]
       nodeconfig.vm.box = node[:box]
       # Uncomment this in order to set the disk size
-      nodeconfig.disksize.size = node[:disk]
+      #nodeconfig.disksize.size = node[:disk]
       nodeconfig.vm.box_check_update = false
       nodeconfig.vm.network "private_network", ip: node[:ip]
       nodeconfig.vm.provider "virtualbox" do |virtualbox|
