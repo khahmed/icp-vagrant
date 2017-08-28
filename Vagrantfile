@@ -2,10 +2,10 @@
 # NOTE: To resize disk run 'vagrant plugin install vagrant-disksize' from  https://github.com/sprotheroe/vagrant-disksize
 # and uncomment the line  "nodeconfig.disksize.size = node[:disk]"
 nodes = [
-  {:hostname => 'icp-worker1', :ip => '192.168.122.11', :box => 'ubuntu/xenial64', :cpu => 2, :memory => 2048, :disk => '50GB'},
-  {:hostname => 'icp-worker2', :ip => '192.168.122.12', :box => 'ubuntu/xenial64', :cpu => 2, :memory => 2048, :disk => '30GB'},
+  {:hostname => 'icp-worker1', :ip => '192.168.122.11', :box => 'ubuntu/xenial64', :cpu => 2, :memory => 4096, :disk => '50GB'},
+  {:hostname => 'icp-worker2', :ip => '192.168.122.12', :box => 'ubuntu/xenial64', :cpu => 2, :memory => 4096, :disk => '30GB'},
   # Here, here, here, add more worker nodes here.
-  {:hostname => 'icp-master', :ip => '192.168.122.10', :box => 'ubuntu/xenial64', :cpu => 4, :memory => 6096, :disk => '30GB' },
+  {:hostname => 'icp-master', :ip => '192.168.122.10', :box => 'ubuntu/xenial64', :cpu => 2, :memory => 4096, :disk => '30GB' },
 ]
 
 icp_hosts = "[master]\n#{nodes.last[:ip]}\n[proxy]\n#{nodes.last[:ip]}\n[worker]\n"
@@ -86,7 +86,7 @@ Vagrant.configure(2) do |config|
       nodeconfig.vm.hostname = node[:hostname]
       nodeconfig.vm.box = node[:box]
       # Uncomment this in order to set the disk size
-      #nodeconfig.disksize.size = node[:disk]
+      nodeconfig.disksize.size = node[:disk]
       nodeconfig.vm.box_check_update = false
       nodeconfig.vm.network "private_network", ip: node[:ip]
       nodeconfig.vm.provider "virtualbox" do |virtualbox|
@@ -113,6 +113,15 @@ Vagrant.configure(2) do |config|
           echo "#{icp_hosts}" > cluster/hosts
           echo "#{icp_config}" > cluster/config.yaml
           docker run -e LICENSE=accept -v "$(pwd)/cluster":/installer/cluster ibmcom/cfc-installer:"#{icp_version}" install
+
+          cd /usr/local/bin/
+          curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+          chmod +x kubectl 
+          kubectl config set-credentials icpadmin --username=admin --password=admin
+          kubectl config set-cluster cfc --server=http://127.0.0.1:8888 --insecure-skip-tls-verify=true
+          kubectl config set-context cfc --cluster=cfc --user=admin  --namespace=default
+          kubectl config use-context cfc
+          kubectl create -f https://raw.githubusercontent.com/khahmed/icp-vagrant/master/persistvolume.yaml
         SHELL
       end
     end
